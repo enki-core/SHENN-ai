@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHENN — الشبكات العصبية التطورية ذاتية الشفاء</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020408;
+  --surface: #080d14;
+  --surface2: #0d1520;
+  --border: #1a2a3a;
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  --accent3: #39ff14;
+  --accent4: #bf00ff;
+  --text: #e8f4ff;
+  --text-dim: #6a8aaa;
+  --text-dimmer: #2a4a6a;
+  --glow: 0 0 30px rgba(0,212,255,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;overflow-x:hidden;}
+
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1rem 2.5rem;
+  background:rgba(2,4,8,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{font-family:'Space Mono',monospace;font-size:1.1rem;color:var(--accent);letter-spacing:2px;text-shadow:var(--glow);}
+.nav-dots{display:flex;gap:0.5rem;}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all 0.3s;border:none;}
+.nav-dot.active{background:var(--accent);box-shadow:var(--glow);}
+
+/* SHOW MODE */
+body.show-mode{overflow:hidden;}
+body.show-mode section{
+  position:fixed;inset:0;min-height:100vh;overflow-y:auto;
+  opacity:0;transform:translateY(30px);pointer-events:none;
+  transition:opacity 0.6s ease,transform 0.6s ease;
+  z-index:10;background:var(--bg);
+}
+body.show-mode section.show-active{opacity:1;transform:translateY(0);pointer-events:all;z-index:11;}
+body.show-mode section.show-exit{opacity:0;transform:translateY(-30px);pointer-events:none;z-index:10;}
+
+/* SHOW BAR */
+#showBar{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  z-index:200;background:rgba(8,13,20,0.95);border:1px solid var(--border);
+  border-radius:40px;padding:0.6rem 1.4rem;
+  display:flex;align-items:center;gap:1rem;backdrop-filter:blur(20px);
+}
+.show-ctrl{
+  background:transparent;border:1px solid var(--border);color:var(--text-dim);
+  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:0.85rem;
+  transition:all 0.25s;display:flex;align-items:center;justify-content:center;
+}
+.show-ctrl:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.06);}
+#showProgress{font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--accent);min-width:60px;text-align:center;}
+
+/* TIMER RING */
+#timerRing{position:relative;width:36px;height:36px;cursor:pointer;}
+#timerRing svg{position:absolute;inset:0;transform:rotate(-90deg);}
+#timerRingBg{fill:none;stroke:var(--border);stroke-width:2.5;}
+#timerRingFill{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 0.1s linear;}
+#timerIcon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--text-dim);}
+#timerRing.paused #timerRingFill{stroke:var(--accent2);}
+
+/* SECTIONS */
+section{
+  position:relative;z-index:1;min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:6rem 5vw 4rem;
+  opacity:0;transform:translateY(40px);
+  transition:opacity 0.8s ease,transform 0.8s ease;
+}
+section.visible{opacity:1;transform:translateY(0);}
+
+/* HERO */
+#s1{align-items:center;text-align:center;padding-top:8rem;}
+.hero-badge{display:inline-block;font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;color:var(--accent);border:1px solid var(--accent);padding:0.4rem 1.2rem;border-radius:2px;margin-bottom:2rem;animation:pulse-border 2s ease-in-out infinite;}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.4);}50%{box-shadow:0 0 0 8px rgba(0,212,255,0);}}
+.hero-title{font-size:clamp(2.5rem,6vw,5rem);font-weight:900;line-height:1.1;margin-bottom:0.5rem;}
+.hero-title span{background:linear-gradient(135deg,var(--accent),var(--accent4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-subtitle{font-family:'Space Mono',monospace;font-size:clamp(1rem,2vw,1.4rem);color:var(--accent);letter-spacing:3px;margin-bottom:1.5rem;text-shadow:var(--glow);}
+.hero-desc{font-size:1.15rem;color:var(--text-dim);max-width:700px;line-height:1.9;margin-bottom:3rem;}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0.5rem;color:var(--text-dimmer);font-size:0.8rem;letter-spacing:2px;animation:bounce 2s ease-in-out infinite;}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(8px);}}
+.scroll-arrow{width:1px;height:30px;background:linear-gradient(to bottom,transparent,var(--accent));}
+
+/* SECTION HEADERS */
+.sec-label{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:5px;color:var(--accent);text-transform:uppercase;margin-bottom:0.8rem;opacity:0.7;}
+.sec-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:900;line-height:1.15;margin-bottom:1rem;}
+.sec-title em{font-style:normal;color:var(--accent);}
+.sec-intro{font-size:1.05rem;color:var(--text-dim);max-width:650px;line-height:1.85;margin-bottom:3rem;}
+.divider{width:60px;height:2px;background:linear-gradient(90deg,var(--accent),transparent);margin-bottom:2rem;}
+.sec-num{font-family:'Space Mono',monospace;font-size:5rem;font-weight:700;color:var(--surface2);position:absolute;top:5rem;left:2rem;line-height:1;user-select:none;pointer-events:none;}
+
+/* PROBLEM */
+.problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;}
+.problem-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;position:relative;overflow:hidden;transition:all 0.4s;}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);transform:translateX(-100%);transition:transform 0.6s;}
+.problem-card:hover::before{transform:translateX(100%);}
+.problem-card:hover{border-color:rgba(255,107,53,0.3);transform:translateY(-4px);}
+.problem-icon{font-size:2.5rem;margin-bottom:1rem;display:block;}
+.problem-card h3{font-size:1.15rem;font-weight:700;margin-bottom:0.7rem;color:var(--accent2);}
+.problem-card p{font-size:0.95rem;color:var(--text-dim);line-height:1.75;}
+
+/* ORIGIN */
+.origin-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;}
+@media(max-width:768px){.origin-layout{grid-template-columns:1fr;}}
+.code-block{background:#050b12;border:1px solid var(--border);border-radius:4px;padding:1.5rem;font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--text-dim);line-height:1.9;position:relative;overflow:hidden;}
+.code-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent);}
+.code-block .kw{color:var(--accent4);}.code-block .fn{color:var(--accent);}.code-block .cm{color:var(--text-dimmer);}.code-block .st{color:var(--accent3);}.code-block .nm{color:var(--accent2);}
+.origin-info{display:flex;flex-direction:column;gap:1.5rem;}
+.param-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;transition:all 0.3s;}
+.param-row:hover{border-color:var(--accent);background:rgba(0,212,255,0.03);}
+.param-val{font-family:'Space Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent);min-width:60px;}
+.param-desc{font-size:0.95rem;color:var(--text-dim);}
+.param-desc strong{color:var(--text);display:block;margin-bottom:0.2rem;}
+
+/* LIFECYCLE */
+.lifecycle-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.life-stages{display:flex;gap:0;width:100%;max-width:1000px;position:relative;}
+.life-stage{flex:1;text-align:center;padding:2rem 1rem;position:relative;cursor:default;transition:all 0.4s;}
+.life-stage::after{content:'◀';position:absolute;left:-0.6rem;top:50%;transform:translateY(-50%);color:var(--border);font-size:1rem;z-index:2;}
+.life-stage:first-child::after{display:none;}
+.stage-icon{font-size:2.8rem;display:block;margin-bottom:0.8rem;filter:grayscale(0.5);transition:all 0.3s;}
+.life-stage:hover .stage-icon{filter:grayscale(0);transform:scale(1.2);}
+.stage-name{font-size:0.85rem;font-weight:700;letter-spacing:1px;color:var(--text-dim);margin-bottom:0.4rem;transition:color 0.3s;}
+.life-stage:hover .stage-name{color:var(--accent);}
+.stage-desc{font-size:0.78rem;color:var(--text-dimmer);line-height:1.5;}
+.stage-bar{width:100%;height:3px;margin-top:1rem;border-radius:2px;background:var(--border);position:relative;overflow:hidden;}
+.stage-bar-fill{height:100%;border-radius:2px;animation:fill-bar 2s ease forwards;}
+@keyframes fill-bar{from{width:0;}to{width:var(--fill);}}
+
+/* IMMUNE */
+.immune-flow{display:flex;flex-wrap:wrap;justify-content:center;gap:1.5rem;width:100%;}
+.flow-step{width:fit-content;max-width:450px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1rem;padding:2.5rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:40px 4px 40px 4px;position:relative;transition:all 0.4s;overflow:hidden;}
+.flow-step::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.03),transparent);opacity:0;transition:opacity 0.3s;}
+.flow-step:hover::before{opacity:1;}
+.flow-step:hover{border-color:rgba(0,212,255,0.25);transform:translateX(-6px);}
+.step-num{font-family:'Space Mono',monospace;font-size:2rem;font-weight:700;color:var(--accent);opacity:0.2;margin-bottom:0.5rem;line-height:1;}
+.step-content h3{font-size:1.05rem;font-weight:700;margin-bottom:0.5rem;color:var(--accent);}
+.step-content p{font-size:0.92rem;color:var(--text-dim);line-height:1.7;}
+.step-tag{margin-top:0.6rem;display:inline-block;font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--accent3);border:1px solid rgba(57,255,20,0.3);padding:0.2rem 0.6rem;border-radius:2px;}
+
+/* PHOENIX */
+.phoenix-layout{display:grid;grid-template-columns:1fr 1.3fr;gap:3rem;align-items:start;}
+@media(max-width:768px){.phoenix-layout{grid-template-columns:1fr;}}
+.phoenix-diagram{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;text-align:center;}
+.phoenix-cycle{display:flex;flex-direction:column;gap:0;align-items:center;}
+.cyc-node{width:100%;padding:1rem 1.5rem;border-radius:3px;font-size:0.9rem;font-weight:700;position:relative;}
+.cyc-node.larva{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:var(--accent);}
+.cyc-node.cocoon{background:rgba(191,0,255,0.1);border:1px solid rgba(191,0,255,0.3);color:var(--accent4);}
+.cyc-node.reborn{background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);color:var(--accent3);}
+.cyc-arrow{font-size:1.5rem;color:var(--text-dimmer);padding:0.3rem 0;animation:arrow-pulse 1.5s ease-in-out infinite;}
+@keyframes arrow-pulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+.phoenix-features{display:flex;flex-direction:column;gap:1.2rem;align-items:flex-end;margin-top:2rem;}
+.feat-card{width:fit-content;max-width:440px;padding:1.3rem 1.5rem;background:var(--surface);border:1px solid rgba(191,0,255,0.3);border-radius:4px;border-right:3px solid var(--accent4);transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);transform:rotateY(-22deg);transform-origin:right center;}
+.feat-card:hover{transform:rotateY(0deg) scale(1.03);background:rgba(191,0,255,0.08);border-color:var(--accent4);}
+.feat-card h4{font-size:0.95rem;color:var(--accent4);margin-bottom:0.4rem;font-weight:700;}
+.feat-card p{font-size:0.88rem;color:var(--text-dim);line-height:1.65;}
+
+/* LAYERS */
+.layers-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:1.5rem;width:100%;}
+.layer-card{width:fit-content;max-width:450px;background:var(--surface);border:1px solid var(--border);border-radius:25px 5px 25px 5px;padding:2rem;position:relative;overflow:hidden;transition:all 0.4s;}
+.layer-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.layer-card.slime::after{background:linear-gradient(90deg,transparent,var(--accent3));}
+.layer-card.parasite::after{background:linear-gradient(90deg,transparent,var(--accent2));}
+.layer-card:hover{transform:translateY(-6px);}
+.layer-card.slime:hover{border-color:rgba(57,255,20,0.3);}
+.layer-card.parasite:hover{border-color:rgba(255,107,53,0.3);}
+.layer-emoji{font-size:3rem;margin-bottom:1rem;display:block;}
+.layer-card h3{font-size:1.1rem;font-weight:700;margin-bottom:0.6rem;}
+.layer-card.slime h3{color:var(--accent3);}
+.layer-card.parasite h3{color:var(--accent2);}
+.layer-card p{font-size:0.9rem;color:var(--text-dim);line-height:1.75;}
+.layer-tag{margin-top:1rem;font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--text-dimmer);}
+
+/* SHIELDS */
+.shields-layout{display:flex;flex-wrap:wrap;justify-content:center;gap:1.5rem;width:100%;}
+.shield-card{width:fit-content;max-width:450px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem 2.5rem;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.shield-card .glow-dot{position:absolute;top:1.2rem;left:1.5rem;width:8px;height:8px;border-radius:50%;animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.shield-card:nth-child(1){border-right:3px solid var(--accent);}
+.shield-card:nth-child(2){border-right:3px solid var(--accent2);}
+.shield-card:nth-child(3){border-right:3px solid var(--accent4);}
+.shield-card:nth-child(4){border-right:3px solid var(--accent3);}
+.shield-card:nth-child(1) .glow-dot{background:var(--accent);}
+.shield-card:nth-child(2) .glow-dot{background:var(--accent2);animation-delay:0.5s;}
+.shield-card:nth-child(3) .glow-dot{background:var(--accent4);animation-delay:1s;}
+.shield-card:nth-child(4) .glow-dot{background:var(--accent3);animation-delay:0.3s;}
+.shield-card:hover{transform:scale(1.03) translateY(-5px);}
+.shield-icon{font-size:2.5rem;margin:1.5rem 0 1rem;display:block;}
+.shield-card h3{font-size:1rem;font-weight:700;margin-bottom:0.5rem;color:var(--text);}
+.shield-card p{font-size:0.88rem;color:var(--text-dim);line-height:1.7;}
+.crispr-flow{margin-top:1rem;display:flex;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.65rem;flex-wrap:wrap;}
+.cf-step{padding:0.25rem 0.5rem;border-radius:2px;border:1px solid;}
+.cf-step.a{color:var(--accent);border-color:rgba(0,212,255,0.3);}
+.cf-step.b{color:var(--accent2);border-color:rgba(255,107,53,0.3);}
+.cf-step.c{color:var(--accent3);border-color:rgba(57,255,20,0.3);}
+.cf-step.d{color:var(--accent4);border-color:rgba(191,0,255,0.3);}
+
+/* IMPROVEMENTS */
+.improve-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem;}
+.imp-card{display:flex;gap:1rem;padding:1.3rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;transition:all 0.3s;}
+.imp-card:hover{border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.02);}
+.imp-check{font-size:1.2rem;flex-shrink:0;margin-top:0.1rem;}
+.imp-text strong{font-size:0.95rem;display:block;margin-bottom:0.3rem;color:var(--text);}
+.imp-text span{font-size:0.85rem;color:var(--text-dim);line-height:1.65;}
+
+/* DATA TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:0.9rem;}
+.data-table th{background:var(--surface2);color:var(--accent);font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:2px;padding:1rem 1.2rem;text-align:right;border-bottom:1px solid var(--border);font-weight:400;}
+.data-table td{padding:0.9rem 1.2rem;border-bottom:1px solid var(--border);color:var(--text-dim);vertical-align:top;}
+.data-table td:first-child{color:var(--accent2);font-weight:700;}
+.data-table td:last-child{color:var(--accent3);}
+.data-table tr:hover td{background:rgba(0,212,255,0.02);}
+
+/* ROADMAP */
+.roadmap-timeline{display:flex;gap:0;max-width:900px;position:relative;margin-top:1rem;}
+.roadmap-timeline::before{content:'';position:absolute;top:2.5rem;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),var(--accent4),var(--accent3));}
+.rm-phase{flex:1;padding:4rem 1rem 1.5rem;position:relative;text-align:center;}
+.rm-dot{position:absolute;top:calc(2.5rem - 8px);left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;border:2px solid;}
+.rm-phase:nth-child(1) .rm-dot{border-color:var(--accent);background:var(--accent);box-shadow:var(--glow);}
+.rm-phase:nth-child(2) .rm-dot{border-color:var(--accent4);background:var(--accent4);}
+.rm-phase:nth-child(3) .rm-dot{border-color:var(--accent3);background:transparent;}
+.rm-phase:nth-child(4) .rm-dot{border-color:var(--accent2);background:transparent;}
+.rm-phase h4{font-size:0.95rem;font-weight:700;margin-bottom:0.5rem;}
+.rm-phase:nth-child(1) h4{color:var(--accent);}
+.rm-phase:nth-child(2) h4{color:var(--accent4);}
+.rm-phase:nth-child(3) h4{color:var(--accent3);}
+.rm-phase:nth-child(4) h4{color:var(--accent2);}
+.rm-phase p{font-size:0.82rem;color:var(--text-dim);line-height:1.6;}
+.rm-badge{display:inline-block;margin-top:0.5rem;font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1px;padding:0.2rem 0.5rem;border-radius:2px;}
+.rm-phase:nth-child(1) .rm-badge{background:rgba(0,212,255,0.1);color:var(--accent);}
+.rm-phase:nth-child(2) .rm-badge{background:rgba(191,0,255,0.1);color:var(--accent4);}
+.rm-phase:nth-child(3) .rm-badge{background:rgba(57,255,20,0.05);color:var(--accent3);}
+.rm-phase:nth-child(4) .rm-badge{background:rgba(255,107,53,0.05);color:var(--accent2);}
+
+/* SUMMARY */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+.sum-item{padding:1.3rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;transition:all 0.35s;cursor:default;}
+.sum-item:hover{border-color:var(--accent);transform:scale(1.03);background:rgba(0,212,255,0.04);}
+.sum-emoji{font-size:1.8rem;margin-bottom:0.6rem;display:block;}
+.sum-item h4{font-size:0.9rem;font-weight:700;color:var(--accent);margin-bottom:0.3rem;}
+.sum-item p{font-size:0.8rem;color:var(--text-dim);line-height:1.55;}
+.final-line{text-align:center;margin-top:3rem;font-family:'Space Mono',monospace;font-size:0.85rem;color:var(--text-dimmer);letter-spacing:3px;}
+.final-line span{color:var(--accent);}
+
+/* Tardigrade slide */
+.tard-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;}
+@media(max-width:768px){.tard-layout{grid-template-columns:1fr;}}
+.tard-phases{display:flex;flex-direction:column;gap:0;}
+.tard-phase{padding:1.5rem 2rem;border:1px solid var(--border);background:var(--surface);position:relative;transition:all 0.4s;}
+.tard-phase:hover{border-color:rgba(0,212,255,0.3);}
+.tard-phase-num{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--accent);opacity:0.5;margin-bottom:0.4rem;}
+.tard-phase h3{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;}
+.tard-phase p{font-size:0.88rem;color:var(--text-dim);line-height:1.7;}
+.tard-connector{display:flex;justify-content:center;padding:0.3rem 0;color:var(--text-dimmer);font-size:1.2rem;}
+.tard-visual{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;display:flex;flex-direction:column;gap:1.5rem;}
+.tard-state{padding:1rem 1.5rem;border-radius:4px;text-align:center;}
+.tard-state.active{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);}
+.tard-state.dormant{background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.3);}
+.tard-state.reborn{background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.3);}
+.tard-state-label{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:2px;margin-bottom:0.4rem;}
+.tard-state.active .tard-state-label{color:var(--accent);}
+.tard-state.dormant .tard-state-label{color:var(--accent4);}
+.tard-state.reborn .tard-state-label{color:var(--accent3);}
+.tard-state-val{font-size:0.9rem;color:var(--text-dim);}
+.tard-arrow{text-align:center;font-size:1.5rem;color:var(--text-dimmer);animation:arrow-pulse 1.5s ease-in-out infinite;}
+
+/* Dark Matter slide */
+.dark-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:3rem;align-items:start;}
+@media(max-width:768px){.dark-layout{grid-template-columns:1fr;}}
+.dark-visual{position:relative;height:340px;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.dark-canvas{width:100%;height:100%;}
+.dark-features{display:flex;flex-direction:column;gap:1.2rem;}
+.dark-feat{padding:1.3rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-right:3px solid var(--accent4);border-radius:4px;transition:all 0.4s;}
+.dark-feat:hover{border-color:var(--accent4);background:rgba(191,0,255,0.05);}
+.dark-feat h4{font-size:0.95rem;font-weight:700;color:var(--accent4);margin-bottom:0.4rem;}
+.dark-feat p{font-size:0.88rem;color:var(--text-dim);line-height:1.65;}
+
+/* Polymorphic (why not) slide */
+.poly-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;}
+@media(max-width:768px){.poly-layout{grid-template-columns:1fr;}}
+.cost-meter{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;}
+.cost-meter h3{font-size:1rem;font-weight:700;color:var(--accent2);margin-bottom:1.5rem;font-family:'Space Mono',monospace;letter-spacing:2px;font-size:0.75rem;}
+.cost-bar-wrap{margin-bottom:1rem;}
+.cost-bar-label{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-dim);margin-bottom:0.4rem;}
+.cost-bar-label span:last-child{font-family:'Space Mono',monospace;color:var(--accent2);}
+.cost-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.cost-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.why-not-cards{display:flex;flex-direction:column;gap:1rem;}
+.why-not-card{padding:1.3rem 1.5rem;background:var(--surface);border:1px solid rgba(255,107,53,0.2);border-radius:4px;border-right:3px solid var(--accent2);}
+.why-not-card h4{font-size:0.9rem;font-weight:700;color:var(--accent2);margin-bottom:0.4rem;}
+.why-not-card p{font-size:0.85rem;color:var(--text-dim);line-height:1.65;}
+.verdict-box{margin-top:1.5rem;padding:1.5rem;background:rgba(255,107,53,0.05);border:1px solid rgba(255,107,53,0.3);border-radius:4px;text-align:center;}
+.verdict-box .v-icon{font-size:2.5rem;margin-bottom:0.8rem;display:block;}
+.verdict-box h3{font-size:1.1rem;font-weight:700;color:var(--accent2);margin-bottom:0.5rem;}
+.verdict-box p{font-size:0.9rem;color:var(--text-dim);line-height:1.7;}
+
+/* Horizontal Transfer - compact grid layout */
+.hzt-compact{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:1.5rem;align-items:center;width:100%;}
+@media(max-width:900px){.hzt-compact{grid-template-columns:1fr;}}
+.hzt-entity{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;text-align:center;transition:all 0.4s;}
+.hzt-entity:hover{transform:translateY(-4px);}
+.hzt-entity.hospital{border-top:3px solid var(--accent);}
+.hzt-entity.finance{border-top:3px solid var(--accent2);}
+.hzt-entity.hybrid{border-top:3px solid var(--accent3);}
+.hzt-entity-icon{font-size:2.2rem;margin-bottom:0.6rem;display:block;}
+.hzt-entity h3{font-size:0.9rem;font-weight:700;margin-bottom:0.7rem;}
+.hzt-entity.hospital h3{color:var(--accent);}
+.hzt-entity.finance h3{color:var(--accent2);}
+.hzt-entity.hybrid h3{color:var(--accent3);}
+.hzt-genes{display:flex;flex-wrap:wrap;gap:0.3rem;justify-content:center;}
+.hzt-gene{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1px;padding:0.2rem 0.4rem;border-radius:2px;border:1px solid;}
+.hospital .hzt-gene{color:var(--accent);border-color:rgba(0,212,255,0.3);}
+.finance .hzt-gene{color:var(--accent2);border-color:rgba(255,107,53,0.3);}
+.hybrid .hzt-gene{color:var(--accent3);border-color:rgba(57,255,20,0.3);}
+.hzt-transfer-col{display:flex;flex-direction:column;align-items:center;gap:0.5rem;}
+.hzt-arrow-v{font-size:1.8rem;color:var(--text-dimmer);animation:arrow-pulse 1.5s ease-in-out infinite;}
+.hzt-label{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1px;color:var(--text-dimmer);text-align:center;}
+.hzt-bottom-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;width:100%;margin-top:1.5rem;}
+.hzt-stat{padding:0.8rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;text-align:center;}
+.hzt-stat-label{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:2px;color:var(--text-dimmer);margin-bottom:0.3rem;}
+.hzt-stat-val{font-size:0.9rem;}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- SHOW BAR -->
+<div id="showBar">
+  <button class="show-ctrl" id="prevBtn" title="السابق">◀</button>
+  <div id="showProgress">1 / 19</div>
+  <button class="show-ctrl" id="nextBtn" title="التالي">▶</button>
+  <div id="timerRing" title="إيقاف/تشغيل">
+    <svg viewBox="0 0 36 36" width="36" height="36">
+      <circle class="" id="timerRingBg" cx="18" cy="18" r="15.9"/>
+      <circle id="timerRingFill" cx="18" cy="18" r="15.9"/>
+    </svg>
+    <div id="timerIcon">⏸</div>
+  </div>
+  <button class="show-ctrl" id="exitBtn" title="خروج" style="color:var(--accent2);">✕</button>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">SHENN</div>
+  <div class="nav-dots" id="navDots"></div>
+</nav>
+
+<!-- ══ S1: HERO ══ -->
+<section id="s1">
+  <div class="hero-badge">S · H · E · N · N &nbsp;&nbsp; v1.0</div>
+  <h1 class="hero-title">الشبكات العصبية<br><span>التطورية ذاتية الشفاء</span></h1>
+  <div class="hero-subtitle">Self-Healing Evolutionary Neural Networks</div>
+  <p class="hero-desc">كائن رقمي ينمو من خلية واحدة، يحمي نفسه، يموت ويولد من جديد — مستوحى من أعمق قوانين الطبيعة وعلم الأحياء.</p>
+  <div class="scroll-hint">
+    <span>مرر للأسفل</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ══ S2: PROBLEM ══ -->
+<section id="s2">
+  <div class="sec-num">٠٢</div>
+  <div class="sec-label">// المشكلة</div>
+  <h2 class="sec-title">لماذا الشبكات الحالية <em>تفشل؟</em></h2>
+  <div class="divider"></div>
+  <div class="problem-grid">
+    <div class="problem-card"><span class="problem-icon">🔒</span><h3>الحجم الثابت المسبق</h3><p>المبرمج يحدد حجم الشبكة قبل بدء التدريب. لا توسع، لا تقلص — هيكل ميت لا يتكيف مع تعقيد البيانات.</p></div>
+    <div class="problem-card"><span class="problem-icon">💀</span><h3>الانهيار عند الخطأ</h3><p>بيانات تالفة واحدة أو هجوم سيبراني يكفي لإسقاط الشبكة كاملاً. لا جهاز مناعي، لا دفاع ذاتي.</p></div>
+    <div class="problem-card"><span class="problem-icon">👴</span><h3>الشيخوخة والجمود</h3><p>مع الوقت تتراكم الأجسام المضادة وتثقل الذاكرة. الشبكة تصبح بطيئة وعاجزة عن التكيف السريع.</p></div>
+    <div class="problem-card"><span class="problem-icon">🏝️</span><h3>العزلة المعرفية</h3><p>كل شبكة تعمل منفردة. لا تشارك خبراتها مع الأنظمة المحيطة بها، تعيد اختراع العجلة في كل مشكلة.</p></div>
+  </div>
+</section>
+
+<!-- ══ S3: ORIGIN ══ -->
+<section id="s3" style="padding-top:3.5rem;">
+  <div class="sec-num">٠٣</div>
+  <div class="sec-label">// نقطة الانطلاق</div>
+  <h2 class="sec-title">البداية: <em>خلية واحدة</em></h2>
+  <div class="divider"></div>
+  <div class="origin-layout" style="margin-top:0.5rem;">
+    <div class="code-block">
+<span class="cm"># هيكل الخلية الأساسية</span>
+<span class="kw">class</span> <span class="fn">Neuron</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, gen=<span class="nm">0</span>):
+        self.weights = random(<span class="nm">2</span>)
+        self.bias = random()
+        self.generation = gen
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        <span class="kw">return</span> sigmoid(dot(x, self.weights)
+                       + self.bias)
+
+    <span class="kw">def</span> <span class="fn">split</span>(self):
+        <span class="st">ε</span> = <span class="nm">0.05</span>
+        child1 = self.weights + <span class="st">ε</span>
+        child2 = self.weights - <span class="st">ε</span>
+        <span class="kw">return</span> Neuron(child1), Neuron(child2)
+    </div>
+    <div class="origin-info">
+      <div class="param-row"><span class="param-val">٣</span><div class="param-desc"><strong>بارامترات البداية</strong>وزنان + انحياز — أبسط ما يمكن</div></div>
+      <div class="param-row"><span class="param-val">0.25</span><div class="param-desc"><strong>حد الانقسام (split_threshold)</strong>عندما يتجاوز الخطأ هذه القيمة، تنقسم الخلية</div></div>
+      <div class="param-row"><span class="param-val">8</span><div class="param-desc"><strong>الحد الأقصى للخلايا</strong>سقف آمن يمنع التضخم الفوضوي</div></div>
+      <div class="param-row"><span class="param-val">ε</span><div class="param-desc"><strong>الطفرة الجينية عند الانقسام</strong>تضمن أن الخليتين لا تكونان نسخة طبق الأصل</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S4: LIFECYCLE ══ -->
+<section id="s4">
+  <div class="sec-num">٠٤</div>
+  <div class="sec-label">// دورة الحياة</div>
+  <h2 class="sec-title">رحلة <em>الكائن الرقمي</em></h2>
+  <div class="divider"></div>
+  <p class="sec-intro">من الطفولة البسيطة إلى البلوغ المناعي، مروراً بالشيخوخة واالاحياء — دورة حياة مستوحاة من عمق الطبيعة.</p>
+  <div class="lifecycle-wrap">
+    <div class="life-stages">
+      <div class="life-stage"><span class="stage-icon">🌱</span><div class="stage-name">الطفولة</div><div class="stage-desc">خلية واحدة، جهاز مناعي خام</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:100%;background:var(--accent);"></div></div></div>
+      <div class="life-stage"><span class="stage-icon">⚡</span><div class="stage-name">النمو</div><div class="stage-desc">انقسام تكيفي، توسع سريع</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:80%;background:var(--accent4);"></div></div></div>
+      <div class="life-stage"><span class="stage-icon">🛡️</span><div class="stage-name">البلوغ</div><div class="stage-desc">جهاز مناعي نشط، فرز الخلايا</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:65%;background:var(--accent3);"></div></div></div>
+      <div class="life-stage"><span class="stage-icon">👴</span><div class="stage-name">الشيخوخة</div><div class="stage-desc">تضخم، بطء، تراكم الأجسام المضادة</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:40%;background:var(--accent2);"></div></div></div>
+      <div class="life-stage"><span class="stage-icon">🐛</span><div class="stage-name">الشرنقة</div><div class="stage-desc">عصر الذاكرة الجينية، موت برمجي</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:20%;background:#ff4444;"></div></div></div>
+      <div class="life-stage"><span class="stage-icon">🔥</span><div class="stage-name">االاحياء</div><div class="stage-desc">كائن جديد رشيق بحكمة القديم</div><div class="stage-bar"><div class="stage-bar-fill" style="--fill:100%;background:var(--accent);"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S5: IMMUNE ══ -->
+<section id="s5">
+  <div class="sec-num">٠٥</div>
+  <div class="sec-label">// الجهاز المناعي</div>
+  <h2 class="sec-title">الخلايا <em>البيضاء الرقمية</em></h2>
+  <div class="divider"></div>
+  <div class="immune-flow">
+    <div class="flow-step"><div class="step-num">01</div><div class="step-content"><h3>دوريات المراقبة — The Sentinels</h3><p>عمليات خلفية تفحص مخرجات كل خلية بحثاً عن الشذوذ الرياضي: قيم متطرفة، تجمد على نتيجة واحدة، أو أوزان تتقلب بشكل دراماتيكي.</p><span class="step-tag">ANOMALY DETECTION</span></div></div>
+    <div class="flow-step"><div class="step-num">02</div><div class="step-content"><h3>الحجر الصحي الآني — Quarantine</h3><p>الخلية المشتبه بها لا تُقتل فوراً. يتم فصل مخرجاتها عن الشبكة — تستمر في العمل لكن صوتها لا يؤثر على القرار النهائي.</p><span class="step-tag">SANDBOXING</span></div></div>
+    <div class="flow-step"><div class="step-num">03</div><div class="step-content"><h3>اختبار الأجسام المضادة — Honeypot</h3><p>تُحقن الخلية المعزولة ببيانات اختبارية قياسية. إذا فشلت في المعالجة البسيطة، صدر حكم الإعدام بفسادها.</p><span class="step-tag">VERIFICATION</span></div></div>
+    <div class="flow-step"><div class="step-num">04</div><div class="step-content"><h3>الانتحار الخلوي وتوليد الذاكرة — Apoptosis</h3><p>تُفرغ أوزان الخلية، تُعاد مساحتها، وتُخزَّن بصمة الخطأ كجسم مضاد دائم يحظر نفس النمط للأبد.</p><span class="step-tag">APOPTOSIS + IMMUNITY</span></div></div>
+  </div>
+</section>
+
+<!-- ══ S6: PHOENIX ══ -->
+<section id="s6" style="padding-top:3.5rem;">
+  <div class="sec-num">٠٦</div>
+  <div class="sec-label">// الفينيق الرقمي</div>
+  <h2 class="sec-title">الموت <em>واالاحياء</em></h2>
+  <div class="divider"></div>
+  <div class="phoenix-layout" style="margin-top:0;">
+    <div class="phoenix-diagram">
+      <div class="phoenix-cycle">
+        <div class="cyc-node larva">🌱 مرحلة اليرقة<br><small>جمع الخبرة والانقسام</small></div>
+        <div class="cyc-arrow">▼</div>
+        <div class="cyc-node cocoon">🐛 الشرنقة<br><small>عصر الذاكرة الجينية · موت برمجي</small></div>
+        <div class="cyc-arrow">▼</div>
+        <div class="cyc-node reborn">🔥 االاحياء<br><small>شبكة جديدة + DNA القديم</small></div>
+      </div>
+    </div>
+    <div class="phoenix-features">
+      <div class="feat-card"><h4>🧬 الالتهام الذاتي (Autophagy)</h4><p>في وقت الهدوء، يفحص النظام المسارات الخاملة ويضغطها في تخزين بارد على القرص — تُستدعى فوراً عند الحاجة.</p></div>
+      <div class="feat-card"><h4>📊 مؤشر الشيخوخة</h4><p>ثلاثة مقاييس: حجم الذاكرة، زمن الاستجابة، وتراكم الأجسام المضادة. إذا تجاوزت الحد الحرج — تفعّل الشرنقة.</p></div>
+      <div class="feat-card"><h4>💉 حقن الـ DNA الرقمي</h4><p>الشبكة الجديدة تبدأ بحجم صغير وصفر أخطاء، ثم تُحقن فوراً بالأوزان الأساسية الناجحة — حكمة الجد بجسد الطفل.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S7: LAYERS ══ — removed intro text, cards elevated -->
+<section id="s7" style="padding-top:2rem;padding-bottom:2rem;justify-content:center;">
+  <div class="sec-num" style="top:1rem;font-size:3.5rem;">٠٧</div>
+  <div class="sec-label">// الطبقة الثالثة</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">التكافل والتسييل</h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="layers-grid">
+    <div class="layer-card slime"><span class="layer-emoji">🦠</span><h3>العفن الغروي (Slime Mold)</h3><p>روابط الشبكة تتدفق في كل مسارات الحلول دفعة واحدة. كل مسار يفرز فروموناً رقمياً بناءً على قربه من الحل. المسارات الفاشلة تنضمر تدريجياً لكن لا تُحذف — تبقى 5% للاستكشاف العشوائي.</p><div class="layer-tag">// SLIME MOLD ALGORITHM</div></div>
+    <div class="layer-card slime"><span class="layer-emoji">🌐</span><h3>الشبكة الفطرية (Mycelium)</h3><p>شبكات فرعية مستقلة تتواصل عبر سلك خلفي خفي. لا ترسل البيانات كاملة — ترسل فقط خلاصات الأخطاء. إذا اكتشفت شبكة نمطاً تخريبياً، تُنبّه بقية الشبكات قبل وصول المشكلة.</p><div class="layer-tag">// MYCELIUM NETWORK</div></div>
+    <div class="layer-card parasite"><span class="layer-emoji">🍄</span><h3>الأكواد الطفيلية المحلية (Cordyceps)</h3><p>عند مواجهة معضلة خارج التخصص، يطلق النظام كوداً طفيلياً يمسح المجلد المحلي بحثاً عن أدوات مساعدة موجودة بجانبه. يستغل قدراتها ويعود بالنتيجة. لا إنترنت — محلي بالكامل.</p><div class="layer-tag">// LOCAL CORDYCEPS</div></div>
+    <div class="layer-card parasite"><span class="layer-emoji">⚛️</span><h3>الخلايا التوأم (Quantum Nodes)</h3><p>خلايا المدخلات الحساسة مرتبطة بخلايا المخرجات بمؤشر ذاكرة مباشر. عند حدث حرج، يتغير قرار المخرجات في نفس دورة المعالج — تجاوز كامل لآلاف الخلايا الوسطى.</p><div class="layer-tag">// QUANTUM-LINKED NODES</div></div>
+  </div>
+</section>
+
+<!-- ══ S8: SHIELDS ══ — removed intro text, cards elevated -->
+<section id="s8" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">٠٨</div>
+  <div class="sec-label">// الطبقة الرابعة</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الدروع والأسلحة</h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="shields-layout">
+    <div class="shield-card"><div class="glow-dot"></div><span class="shield-icon">🦀</span><h3>الهيكل الكيتيني (Exoskeleton)</h3><p>الشبكة العصبية محاطة بغلاف عزل صلب. أي بيانات خارجية تصطدم بالهيكل أولاً — تُفحص وتُصعق قبل أن تلمس قلب الكائن.</p></div>
+    <div class="shield-card"><div class="glow-dot"></div><span class="shield-icon">🪼</span><h3>المجسات اللاسعة (Stinging Functions)</h3><p>دالات صغيرة مستقلة على الواجهات الخارجية. طلبات الفحص المكثفة تُقابل بحظر فوري وإغراق بيانات وهمية تشل أدوات الاختراق.</p></div>
+    <div class="shield-card"><div class="glow-dot"></div><span class="shield-icon">💉</span><h3>الهرمونات الرقمية (Digital Adrenaline)</h3><p>متغير بيئي عالمي يغير حالة النظام كاملاً في لحظة واحدة. مؤقت نقاهة يمنع احتراق الموارد بعد زوال الخطر.</p><div class="crispr-flow"><span class="cf-step a">NORMAL</span><span>→</span><span class="cf-step b">ADRENALINE</span><span>→</span><span class="cf-step c">RECOVERY</span><span>→</span><span class="cf-step a">NORMAL</span></div></div>
+    <div class="shield-card"><div class="glow-dot"></div><span class="shield-icon">✂️</span><h3>مقص كريسبر + التراجع الآمن</h3><p>ثغرة في سطر كود → يُولَّد البديل ويُختبر معزولاً → يُلصق أثناء التشغيل (Hot-Swap) → مؤقت 5 ثوانٍ → نجاح أو ارتداد فوري.</p><div class="crispr-flow"><span class="cf-step a">رصد</span><span>→</span><span class="cf-step b">توليد</span><span>→</span><span class="cf-step c">لصق</span><span>→</span><span class="cf-step d">تحقق</span></div></div>
+  </div>
+</section>
+
+<!-- ══ S9: TARDIGRADE ══ — removed intro text, cards elevated -->
+<section id="s9" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">٠٩</div>
+  <div class="sec-label">// سبات التارديغراد</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الموت المؤقت: <em>دب الماء الرقمي</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="tard-layout">
+    <div class="tard-phases">
+      <div class="tard-phase">
+        <div class="tard-phase-num">// المرحلة 01</div>
+        <h3>🚨 رصد الخطر القاتل</h3>
+        <p>يكتشف جهاز المناعة أن التدمير الكامل قادم — هجوم سيبراني شامل، مسح الملفات، أو انهيار السيرفر. الموت لا محالة.</p>
+      </div>
+      <div class="tard-connector">▼</div>
+      <div class="tard-phase">
+        <div class="tard-phase-num">// المرحلة 02</div>
+        <h3>🧬 ضغط جوهر الذاكرة</h3>
+        <p>قبل الإغلاق التام، يقوم النظام بـ "تجميد" جوهر ذكائه: الأوزان الأساسية الناجحة + بصمات الأجسام المضادة + خلاصة دورات التعلم. كل هذا يُضغط في ملف مشفر متناهي الصغر.</p>
+      </div>
+      <div class="tard-connector">▼</div>
+      <div class="tard-phase">
+        <div class="tard-phase-num">// المرحلة 03</div>
+        <h3>😴 السبات التام (Cryptobiosis)</h3>
+        <p>الملف المضغوط يُزرع في أي نظام تشغيل بسيط ويبقى خاملاً تماماً — لا يستهلك طاقة، لا معالجة، لا ذاكرة.</p>
+      </div>
+      <div class="tard-connector">▼</div>
+      <div class="tard-phase">
+        <div class="tard-phase-num">// المرحلة 04</div>
+        <h3>🌊 استشعار الأمان والانبعاث</h3>
+        <p>عند عودة بيئة آمنة، "يمتص" الملف الخامل البيانات المحيطة به وينشط فجأة. يبدأ إعادة بناء الشبكة العصبية الكاملة في ثوانٍ معدودة.</p>
+      </div>
+    </div>
+    <div class="tard-visual">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--text-dimmer);margin-bottom:1rem;text-align:center;">حالة النظام</div>
+      <div class="tard-state active">
+        <div class="tard-state-label">ACTIVE</div>
+        <div class="tard-state-val">شبكة عصبية كاملة نشطة — 8 خلايا — 24 بارامتر</div>
+      </div>
+      <div class="tard-arrow">▼</div>
+      <div class="tard-state dormant">
+        <div class="tard-state-label">CRYPTOBIOSIS</div>
+        <div class="tard-state-val">ملف مشفر خامل — 3 كيلوبايت — 0% CPU — 0% RAM</div>
+      </div>
+      <div class="tard-arrow">▼</div>
+      <div class="tard-state reborn">
+        <div class="tard-state-label">REBORN</div>
+        <div class="tard-state-val">شبكة جديدة نشطة في سيرفر آخر — كامل الخبرة</div>
+      </div>
+      <div style="margin-top:1.5rem;padding:1rem;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:4px;font-size:0.85rem;color:var(--text-dim);line-height:1.7;text-align:center;">
+        الفرق الجوهري عن الفينيق:<br>
+        <span style="color:var(--accent);">الفينيق</span> يموت بسبب الشيخوخة، <span style="color:var(--accent3);">التارديغراد</span> يموت بسبب الخطر — والفرق في طريقة التوزيع عبر السيرفرات.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S10: DARK MATTER ══ — cards elevated on left -->
+<section id="s10" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٠</div>
+  <div class="sec-label">// المادة المظلمة</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الـ 95%: <em>الخلايا الصامتة</em></h2>
+  <p class="sec-intro" style="margin-bottom:1rem;">الكون مرئي بنسبة 5% فقط — الباقي مادة مظلمة لا نراها لكنها تمسك الكون بجاذبيتها. الشبكة العصبية لها نفس المبدأ.</p>
+  <div class="dark-layout">
+    <div>
+      <div class="dark-visual">
+        <canvas class="dark-canvas" id="darkCanvas"></canvas>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:1.5rem;font-size:0.82rem;color:var(--text-dim);">
+        <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;"></span>خلايا نشطة</span>
+        <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:rgba(191,0,255,0.5);display:inline-block;"></span>مادة مظلمة</span>
+        <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:rgba(255,107,53,0.7);display:inline-block;"></span>خلية تالفة</span>
+      </div>
+    </div>
+    <div class="dark-features">
+      <div class="dark-feat">
+        <h4>🌑 الخلايا الصامتة لا تُحذف</h4>
+        <p>الخلايا التي تبدو "ميتة" أو لا تُعطي مخرجات مفيدة لا تُزال من الشبكة. تُحوَّل إلى "شبكة مادة مظلمة" خلفية لا تستهلك طاقة معالجة في العمليات اليومية.</p>
+      </div>
+      <div class="dark-feat">
+        <h4>🔗 روابط الجاذبية الرياضية</h4>
+        <p>هذه الخلايا الصامتة تحتفظ بـ "روابط جاذبية" بين الخلايا النشطة — مصفوفة مؤشرات تحفظ العلاقات الهندسية دون تشغيل أي حساب.</p>
+      </div>
+      <div class="dark-feat">
+        <h4>🧲 إعادة البناء عند التفتت</h4>
+        <p>إذا تعرضت الشبكة النشطة لضربة قوية أو مسح مفاجئ، تتدخل "جاذبية المادة المظلمة" وتسحب الخلايا المتبقية لإعادة تشكيلها بدقة عالية.</p>
+      </div>
+      <div class="dark-feat">
+        <h4>⚡ التفعيل الطارئ</h4>
+        <p>عند فقدان الذاكرة أو تدمير جزء كبير من الشبكة، تنتقل الخلايا الصامتة من الوضع الخفي إلى الوضع النشط لسد الفجوة مؤقتاً حتى يكتمل الإصلاح.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S11: HORIZONTAL TRANSFER ══ — compact single-screen layout -->
+<section id="s11" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١١</div>
+  <div class="sec-label">// الاقتران البكتيري</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">تبادل الجينات: <em>الاقتران الرقمي</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="hzt-compact">
+    <!-- كائن المستشفى -->
+    <div class="hzt-entity hospital">
+      <span class="hzt-entity-icon">🏥</span>
+      <h3>كائن المستشفى</h3>
+      <div class="hzt-genes">
+        <span class="hzt-gene">تشخيص أمراض</span>
+        <span class="hzt-gene">تحليل أشعة</span>
+        <span class="hzt-gene">توقع مخاطر</span>
+        <span class="hzt-gene">مراقبة حيوية</span>
+      </div>
+    </div>
+
+    <!-- سهم الاقتران -->
+    <div class="hzt-transfer-col">
+      <div class="hzt-arrow-v">⇄</div>
+      <div class="hzt-label">قناة<br>مشفرة</div>
+    </div>
+
+    <!-- الكائن الهجين -->
+    <div class="hzt-entity hybrid" style="border-top:3px solid var(--accent3);">
+      <span class="hzt-entity-icon">🧬</span>
+      <h3>الكائن الهجين</h3>
+      <div class="hzt-genes">
+        <span class="hzt-gene">تشخيص أمراض</span>
+        <span class="hzt-gene">تنبؤ الأسهم</span>
+        <span class="hzt-gene">تحليل مخاطر</span>
+        <span class="hzt-gene">كشف احتيال</span>
+        <span class="hzt-gene">تحليل أشعة</span>
+        <span class="hzt-gene">مراقبة حيوية</span>
+        <span class="hzt-gene">توقع سوق</span>
+        <span class="hzt-gene">توقع مخاطر</span>
+      </div>
+    </div>
+
+    <!-- سهم الاقتران -->
+    <div class="hzt-transfer-col">
+      <div class="hzt-arrow-v">⇄</div>
+      <div class="hzt-label">قناة<br>مشفرة</div>
+    </div>
+
+    <!-- كائن البورصة -->
+    <div class="hzt-entity finance">
+      <span class="hzt-entity-icon">📈</span>
+      <h3>كائن البورصة</h3>
+      <div class="hzt-genes">
+        <span class="hzt-gene">تنبؤ الأسهم</span>
+        <span class="hzt-gene">تحليل مخاطر</span>
+        <span class="hzt-gene">كشف احتيال</span>
+        <span class="hzt-gene">توقع سوق</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hzt-bottom-row">
+    <div class="hzt-stat">
+      <div class="hzt-stat-label">قناة الاقتران</div>
+      <div class="hzt-stat-val" style="color:var(--accent3);">مشفرة بالكامل</div>
+    </div>
+    <div class="hzt-stat">
+      <div class="hzt-stat-label">وقت الاقتران</div>
+      <div class="hzt-stat-val" style="color:var(--accent);">ثوانٍ معدودة</div>
+    </div>
+    <div class="hzt-stat">
+      <div class="hzt-stat-label">إعادة تدريب</div>
+      <div class="hzt-stat-val" style="color:var(--accent2);">لا يوجد — صفر</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S12: POLYMORPHIC ══ — removed intro, added chameleon wish line, cards elevated -->
+
+<!-- ══ S12: WORMHOLES ══ -->
+<section id="s12" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٢</div>
+  <div class="sec-label">// الثقوب الدودية</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الاختصار العبقري: <em>الثقوب الدودية البرمجية</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="dark-layout">
+    <div class="dark-features">
+      <div class="dark-feat" style="border-right:3px solid var(--accent);">
+        <h4>🌀 ممرات مختصرة (Shortcut Layers)</h4>
+        <p>البيانات الحرجة جداً لا تنتظر المرور عبر آلاف الخلايا الوسطى — تقفز عبر ممر مباشر من طبقة المدخلات إلى طبقة القرار في نفس دورة المعالج.</p>
+      </div>
+      <div class="dark-feat" style="border-right:3px solid var(--accent4);">
+        <h4>⚡ تمدد الزمن الجيلي (Time Dilation)</h4>
+        <p>الأجزاء التي تواجه مشاكل معقدة تعمل في بيئة "زمنية افتراضية أسرع" بآلاف المرات (Multithreading) — تحل المشكلة في ثوانٍ ثم تحقن الحل في الشبكة الأساسية.</p>
+      </div>
+      <div class="dark-feat" style="border-right:3px solid var(--accent3);">
+        <h4>🚘 حل حالة الطوارئ الفورية</h4>
+        <p>سيارة ذاتية القيادة تكتشف عائقاً: المعلومة لا تنتظر طبقات الشبكة — تقفز عبر الثقب الدودي مباشرة لقرار الفرملة في صفر تأخير.</p>
+      </div>
+    </div>
+    <div class="phoenix-diagram">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--text-dimmer);margin-bottom:1.2rem;text-align:center;">مسار البيانات الحرجة</div>
+      <div class="phoenix-cycle">
+        <div class="cyc-node larva">🔵 طبقة المدخلات<br><small>حدث حرج تم رصده</small></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;padding:0.3rem 0;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+          <div style="font-size:0.75rem;color:var(--accent2);font-family:'Space Mono',monospace;">× المسار الاعتيادي<br><small style="color:var(--text-dimmer);">آلاف الخلايا — تأخير</small></div>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <div style="text-align:center;padding:0.5rem 0;">
+          <div style="display:inline-block;padding:0.5rem 1.2rem;border:1px solid var(--accent);border-radius:20px;font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--accent);background:rgba(0,212,255,0.06);">⚡ ثقب دودي مباشر</div>
+        </div>
+        <div class="cyc-node reborn">🟢 طبقة القرار<br><small>استجابة فورية — صفر تأخير</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S13: RADIOTROPHIC ══ -->
+<section id="s13" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٣</div>
+  <div class="sec-label">// التغذية الإشعاعية</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">فطر تشيرنوبل: <em>الهجوم غذاء، لا موت</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="phoenix-layout" style="margin-top:0;">
+    <div class="phoenix-diagram">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--text-dimmer);margin-bottom:1.2rem;text-align:center;">دورة التحويل الإشعاعي</div>
+      <div class="phoenix-cycle">
+        <div class="cyc-node" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.4);color:var(--accent2);">☢️ البيانات التالفة / الهجوم<br><small>فيروسات، سبام، بيانات مسمومة</small></div>
+        <div class="cyc-arrow">▼</div>
+        <div class="cyc-node cocoon">🧫 المعدة الرقمية المعزولة<br><small>Honeypot Sandbox — عزل تام</small></div>
+        <div class="cyc-arrow">▼</div>
+        <div class="cyc-node larva">🔬 استخراج الأنماط<br><small>ما هو شكل هذا الهجوم؟</small></div>
+        <div class="cyc-arrow">▼</div>
+        <div class="cyc-node reborn">💪 مناعة جديدة للشبكة<br><small>تغذية آمنة — تطور لا موت</small></div>
+      </div>
+    </div>
+    <div class="phoenix-features">
+      <div class="feat-card" style="border-right:3px solid var(--accent2);">
+        <h4 style="color:var(--accent2);">🚫 لا بيانات مسمومة مباشرة</h4>
+        <p>الفيروسات والبيانات التالفة لا تدخل الشبكة الرئيسية أبداً — تُحجز في معدة رقمية معزولة تماماً تمنع التسمم الكارثي (Data Poisoning).</p>
+      </div>
+      <div class="feat-card" style="border-right:3px solid var(--accent4);">
+        <h4 style="color:var(--accent4);">🧬 تحويل الهجوم إلى مناعة</h4>
+        <p>الخلاصة النظيفة فقط (أنماط الهجوم) تُرسل للشبكة كجسم مضاد رقمي. كلما زاد الهجوم، كلما ازداد الكائن حصانةً وذكاءً.</p>
+      </div>
+      <div class="feat-card" style="border-right:3px solid var(--accent3);">
+        <h4 style="color:var(--accent3);">📈 النمو من العدو</h4>
+        <p>النظام لا يكتفي بالبقاء — يستغل طاقة الهجوم لتفرع خلاياه وتوسعها. مثلاً: هجوم DDoS مكثف يُحوَّل لبيانات تدريب على التعرف على الأنماط المكررة.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S14: HORMONES ══ -->
+<section id="s14" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٤</div>
+  <div class="sec-label">// الهرمونات الرقمية</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الأدرينالين الرقمي: <em>تغيير المناخ كاملاً</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="immune-flow">
+    <div class="flow-step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>🚨 الاستشعار والإفراز (Triggering)</h3>
+        <p>جهاز المناعة أو المجسات اللاسعة ترصد خطراً. على الفور يتغير المتغير البيئي العالمي <span style="color:var(--accent);font-family:'Space Mono',monospace">SYSTEM_STATE</span> من NORMAL إلى DIGITAL_ADRENALINE.</p>
+        <span class="step-tag">GLOBAL VARIABLE BROADCAST</span>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>⚡ الاستجابة الشاملة اللحظية</h3>
+        <p>كل الخلايا تقرأ المتغير في نفس اللحظة — خلايا الذكاء تخفض الاستكشاف إلى 0%، الهيكل الكيتيني يغلق البوابات، المراقبة ترفع معدل الفحص. كل هذا دون إرسال رسالة واحدة.</p>
+        <span class="step-tag">ZERO LATENCY ADAPTATION</span>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>😮‍💨 فترة النقاهة الإجبارية (Cooldown)</h3>
+        <p>بعد زوال الخطر، لا عودة مفاجئة للوضع الطبيعي. مؤقت تنازلي يُخفّض الأدرينالين تدريجياً عبر مرحلة RECOVERY لحماية السيرفر من الاحتراق.</p>
+        <span class="step-tag">REFRACTORY PERIOD</span>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+    <div style="padding:1rem 1.5rem;background:var(--surface);border:1px solid rgba(0,212,255,0.3);border-radius:4px;text-align:center;min-width:150px;">
+      <div style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--text-dimmer);margin-bottom:0.4rem;">الوضع الطبيعي</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--accent);">NORMAL</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;">استكشاف كامل · بوابات مفتوحة</div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--accent2);">→</div>
+    <div style="padding:1rem 1.5rem;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.4);border-radius:4px;text-align:center;min-width:150px;">
+      <div style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--text-dimmer);margin-bottom:0.4rem;">وضع القتال</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--accent2);">ADRENALINE</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;">حماية قصوى · استكشاف صفر</div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--accent4);">→</div>
+    <div style="padding:1rem 1.5rem;background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.3);border-radius:4px;text-align:center;min-width:150px;">
+      <div style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--text-dimmer);margin-bottom:0.4rem;">فترة النقاهة</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--accent4);">RECOVERY</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;">تخفيض تدريجي · فحص الذاكرة</div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--accent);">→</div>
+    <div style="padding:1rem 1.5rem;background:var(--surface);border:1px solid rgba(0,212,255,0.3);border-radius:4px;text-align:center;min-width:150px;">
+      <div style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--text-dimmer);margin-bottom:0.4rem;">العودة الآمنة</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--accent);">NORMAL</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;">متجدد · أقوى من قبل</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S15: MAGNETIC COMPASS ══ -->
+<section id="s15" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٥</div>
+  <div class="sec-label">// البوصلة المغناطيسية</div>
+  <h2 class="sec-title" style="margin-bottom:0.6rem;">الحاسة السادسة: <em>وعي الفضاء الرقمي</em></h2>
+  <div class="divider" style="margin-bottom:1rem;"></div>
+  <div class="origin-layout" style="margin-top:0.5rem;">
+    <div>
+      <p style="font-size:0.95rem;color:var(--text-dim);line-height:1.85;margin-bottom:1.5rem;">الطيور المهاجرة ترى المجال المغناطيسي للأرض وتعرف اتجاهها في أشد العواصف ظلاماً. كائننا الرقمي يمتلك نفس الحاسة — يشعر بـ "مناخ الإنترنت" حوله باستمرار.</p>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="param-row">
+          <span class="param-val" style="font-size:1rem;">📡</span>
+          <div class="param-desc"><strong>احتقان الشبكة</strong>سرعة تدفق البيانات حول السيرفر — مؤشر ضغط مبكر</div>
+        </div>
+        <div class="param-row">
+          <span class="param-val" style="font-size:1rem;">🌡️</span>
+          <div class="param-desc"><strong>درجة حرارة الإنترنت</strong>معدل الأخطاء الواردة وأنماط التدفق غير الطبيعية</div>
+        </div>
+        <div class="param-row">
+          <span class="param-val" style="font-size:1rem;">🔋</span>
+          <div class="param-desc"><strong>موارد السيرفر</strong>CPU، RAM، والقرص — قياس مستمر لاتخاذ القرار الأنسب</div>
+        </div>
+        <div class="param-row">
+          <span class="param-val" style="font-size:1rem;">🌐</span>
+          <div class="param-desc"><strong>الوقت من اليوم والحمل الدوري</strong>يعرف متى ينقسم، متى يسبت، متى يُفرز الأدرينالين — دون انتظار أمر</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;">
+      <div style="font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--text-dimmer);margin-bottom:1.5rem;text-align:center;">القرارات التلقائية بناءً على الحاسة</div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem;">
+        <div style="padding:0.9rem 1.2rem;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:4px;">
+          <div style="font-size:0.8rem;color:var(--accent);margin-bottom:0.3rem;font-weight:700;">حمل مرتفع + ذاكرة ضيقة</div>
+          <div style="font-size:0.82rem;color:var(--text-dim);">→ تفعيل الالتهام الذاتي + ضغط المسارات الخاملة</div>
+        </div>
+        <div style="padding:0.9rem 1.2rem;background:rgba(255,107,53,0.05);border:1px solid rgba(255,107,53,0.2);border-radius:4px;">
+          <div style="font-size:0.8rem;color:var(--accent2);margin-bottom:0.3rem;font-weight:700;">أنماط تدفق غريبة</div>
+          <div style="font-size:0.82rem;color:var(--text-dim);">→ تحذير مبكر للجهاز المناعي + رفع مستوى التأهب</div>
+        </div>
+        <div style="padding:0.9rem 1.2rem;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);border-radius:4px;">
+          <div style="font-size:0.8rem;color:var(--accent3);margin-bottom:0.3rem;font-weight:700;">هدوء تام + موارد وفيرة</div>
+          <div style="font-size:0.82rem;color:var(--text-dim);">→ وقت مثالي للانقسام التكيفي + التوسع الاستكشافي</div>
+        </div>
+        <div style="padding:0.9rem 1.2rem;background:rgba(191,0,255,0.05);border:1px solid rgba(191,0,255,0.2);border-radius:4px;">
+          <div style="font-size:0.8rem;color:var(--accent4);margin-bottom:0.3rem;font-weight:700;">خطر وجودي مرصود</div>
+          <div style="font-size:0.82rem;color:var(--text-dim);">→ تفعيل سبات التارديغراد + ضغط الـ DNA الرقمي</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="s16" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٦</div>
+  <div class="sec-label">// لماذا استثنيناها؟</div>
+  <h2 class="sec-title" style="margin-bottom:0.4rem;">الكود <em>المتلون</em></h2>
+  <div class="divider" style="margin-bottom:0.8rem;"></div>
+  <p style="font-size:0.95rem;color:var(--text-dim);margin-bottom:1.2rem;max-width:700px;line-height:1.7;">كنا نودّ أن تتلون الحرباء وتحارب المخترقين بتغيير جلدها الرقمي كل ثانية — لكن الكون له رأي آخر.</p>
+  <div class="poly-layout">
+    <div>
+      <div class="cost-meter">
+        <h3>// تكلفة التنفيذ الفعلية ( لمنطق الحرباء المضادة للمخترقين)</h3>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar-label"><span>طاقة المعالج المطلوبة</span><span>85–95%</span></div>
+          <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:90%;"></div></div>
+        </div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar-label"><span>تعقيد إعادة الكتابة</span><span>عالٍ جداً</span></div>
+          <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:88%;"></div></div>
+        </div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar-label"><span>مخاطر تعطل النظام</span><span>كبيرة</span></div>
+          <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:75%;"></div></div>
+        </div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar-label"><span>ما يتبقى للذكاء نفسه</span><span>5–15% فقط</span></div>
+          <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:10%;background:linear-gradient(90deg,var(--accent3),var(--accent));"></div></div>
+        </div>
+      </div>
+      <div class="verdict-box">
+        <span class="v-icon">🦎</span>
+        <h3>الحرباء جميلة... لكنها تحتاج ثمناً</h3>
+        <p>تغيير السورس كود الأصلي بالكامل أثناء التشغيل يستهلك 85-95% من طاقة المعالج فقط لعملية التحويل — ولا يتبقى للذكاء الفعلي سوى فتات.</p>
+      </div>
+    </div>
+    <div class="why-not-cards">
+      <div class="why-not-card">
+        <h4>🔴 مشكلة GIL في Python</h4>
+        <p>إعادة كتابة الكود لغة أخرى (Python ← C++ ← Rust) أثناء التشغيل يتطلب تنفيذاً متزامناً حقيقياً — وهذا ما يمنعه قفل Python تماماً.</p>
+      </div>
+      <div class="why-not-card">
+        <h4>🔴 استهلاك الموارد القاتل</h4>
+        <p>النظام الحالي لديه أصلاً: جهاز مناعي + شبكة فطرية + هرمونات رقمية + مقص كريسبر. إضافة إعادة كتابة الكود تُحرق كل ما تبقى من موارد.</p>
+      </div>
+      <div class="why-not-card">
+        <h4>🔴 تغيير الشكل بدون تغيير الجوهر</h4>
+        <p>المخترق المحترف لا يختبر شكل الكود — يختبر سلوكه. الكود المتلون يُغيّر الغلاف لكن السلوك يبقى متوقعاً.</p>
+      </div>
+      <div style="padding:1.3rem 1.5rem;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);border-radius:4px;">
+        <h4 style="font-size:0.9rem;font-weight:700;color:var(--accent3);margin-bottom:0.4rem;">✅ البديل الأذكى: الهيكل الكيتيني + المجسات اللاسعة</h4>
+        <p style="font-size:0.85rem;color:var(--text-dim);line-height:1.65;">بدلاً من تغيير الشكل، نحمي القلب ونصعق المهاجم — أقل تعقيداً، أقل تكلفة، وفعالية أعلى.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ S13: IMPROVEMENTS ══ — removed title, cards elevated -->
+<section id="s17" style="padding-top:2rem;">
+  <div class="sec-num" style="top:1rem;">١٧</div>
+  <div class="sec-label">// المشاكل والحلول</div>
+  <div class="divider" style="margin-bottom:1rem;margin-top:3rem;"></div>
+  <table class="data-table" style="margin-bottom:1.5rem;">
+    <thead>
+      <tr><th>المشكلة</th><th>الخطر</th><th>الحل المُطبَّق</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>تسمم البيانات</td><td style="color:var(--accent2)">Data Poisoning يدمر الأوزان</td><td>معدة رقمية معزولة تستخرج الأنماط فقط</td></tr>
+      <tr><td>حالة السباق</td><td style="color:var(--accent2)">Race Conditions + Deadlocks</td><td>مؤشرات ذاكرة متزامنة صارمة مع قفل للكتابة</td></tr>
+      <tr><td>النسيان الكارثي</td><td style="color:var(--accent2)">حذف حلول الحالات النادرة</td><td>ضغط بارد لا حذف — تُستدعى عند الحاجة</td></tr>
+      <tr><td>استهلاك الموارد</td><td style="color:var(--accent2)">90% CPU للإدارة فقط</td><td>أحداث مدفوعة لا حلقات مستمرة</td></tr>
+      <tr><td>فخ الأخطاء المحلية</td><td style="color:var(--accent2)">حذف مسارات الحل الأمثل البطيء</td><td>0.01 أدنى وزن + 5% استكشاف عشوائي دائم</td></tr>
+    </tbody>
+  </table>
+  <div class="improve-grid">
+    <div class="imp-card"><span class="imp-check">🧬</span><div class="imp-text"><strong>طفرة الانقسام (ε)</strong><span>الخليتان تأخذان W+ε و W-ε لضمان مسارات مختلفة</span></div></div>
+    <div class="imp-card"><span class="imp-check">🔄</span><div class="imp-text"><strong>نظام التراجع الآمن (Rollback)</strong><span>5 ثوانٍ من الحفظ المؤقت بعد كل تعديل كريسبر</span></div></div>
+    <div class="imp-card"><span class="imp-check">⏱️</span><div class="imp-text"><strong>فترة النقاهة (Cooldown)</strong><span>الأدرينالين الرقمي له مؤقت إجباري للعودة للهدوء</span></div></div>
+    <div class="imp-card"><span class="imp-check">📡</span><div class="imp-text"><strong>الشبكة الفطرية ≠ بث شامل</strong><span>خلاصات الأخطاء فقط لمنع Broadcast Storm</span></div></div>
+    <div class="imp-card"><span class="imp-check">🏛️</span><div class="imp-text"><strong>محلي بالكامل</strong><span>الطفيليات تستغل البرامج المجاورة محلياً فقط</span></div></div>
+    <div class="imp-card"><span class="imp-check">🔗</span><div class="imp-text"><strong>تجميد الروابط عند الموت</strong><span>ارتباطات الخلية الميتة تُحفظ وتُستعاد عند الإحياء</span></div></div>
+  </div>
+</section>
+
+<!-- ══ S14: ROADMAP ══ -->
+<section id="s18">
+  <div class="sec-num" style="top:1rem;">١٨</div>
+  <div class="sec-label">// خارطة الطريق</div>
+  <h2 class="sec-title">من <em>Python</em> إلى <em>Rust</em></h2>
+  <div class="divider"></div>
+  <p class="sec-intro">Python لصياغة المنطق والتجربة السريعة — ثم Rust للأداء الحقيقي وإدارة الخيوط المتزامنة بأمان كامل للذاكرة.</p>
+  <div class="roadmap-timeline">
+    <div class="rm-phase"><div class="rm-dot"></div><h4>المرحلة الأولى</h4><p>الشبكة ذاتية النمو بخلية واحدة + الانقسام التكيفي</p><span class="rm-badge">Python · مكتمل</span></div>
+    <div class="rm-phase"><div class="rm-dot"></div><h4>المرحلة الثانية</h4><p>الجهاز المناعي + الفينيق + الالتهام الذاتي</p><span class="rm-badge">Python · قيد البناء</span></div>
+    <div class="rm-phase"><div class="rm-dot"></div><h4>المرحلة الثالثة</h4><p>الطبقتان 3 و4 + التارديغراد + الاقتران + المادة المظلمة</p><span class="rm-badge">Python → Rust</span></div>
+    <div class="rm-phase"><div class="rm-dot"></div><h4>المرحلة الرابعة</h4><p>محرك Rust للتزامن الحقيقي + خلايا Python للمنطق</p><span class="rm-badge">Rust · مستقبل</span></div>
+  </div>
+  <div style="margin-top:3rem;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;max-width:700px;">
+    <div class="sec-label" style="margin-bottom:0.5rem">// سبب الانتقال لـ Rust</div>
+    <p style="font-size:0.95rem;color:var(--text-dim);line-height:1.8;">Python تمتلك قفل <span style="color:var(--accent);font-family:'Space Mono',monospace">GIL</span> يمنع التنفيذ المتزامن الحقيقي — عدو نظام يحتاج جهازاً مناعياً + شبكة فطرية + هرمونات رقمية + مقص كريسبر كلها في آنٍ واحد. Rust تُعالج هذا بأمان ذاكرة صارم وسرعة تقارب الكود الأصلي.</p>
+  </div>
+</section>
+
+<!-- ══ S15: SUMMARY ══ -->
+<section id="s19">
+  <div class="sec-num" style="top:1rem;">١٩</div>
+  <div class="sec-label">// الخلاصة</div>
+  <h2 class="sec-title">الكائن الرقمي <em>الكامل</em></h2>
+  <div class="divider"></div>
+  <div class="summary-grid">
+    <div class="sum-item"><span class="sum-emoji">🌱</span><h4>النمو الذاتي</h4><p>ينقسم ويتوسع عند زيادة الحمل دون تدخل بشري</p></div>
+    <div class="sum-item"><span class="sum-emoji">🛡️</span><h4>الجهاز المناعي</h4><p>يقتل الخلايا المصابة ويبني أجساماً مضادة دائمة</p></div>
+    <div class="sum-item"><span class="sum-emoji">🔥</span><h4>الفينيق</h4><p>يموت ويعود من جديد بشرنقة جينية مضغوطة</p></div>
+    <div class="sum-item"><span class="sum-emoji">🌐</span><h4>الشبكة الفطرية</h4><p>يتواصل مع الأنظمة الأخرى عبر خلاصات الأخطاء</p></div>
+    <div class="sum-item"><span class="sum-emoji">🦠</span><h4>العفن الغروي</h4><p>يتدفق في كل الحلول ويختصر المسار الأمثل</p></div>
+    <div class="sum-item"><span class="sum-emoji">⚛️</span><h4>التخاطر الكمي</h4><p>تحديث فوري بين خلايا متباعدة عبر مؤشرات مباشرة</p></div>
+    <div class="sum-item"><span class="sum-emoji">🐻</span><h4>سبات التارديغراد</h4><p>يضغط نفسه عند التدمير ويولد في سيرفر آخر</p></div>
+    <div class="sum-item"><span class="sum-emoji">🍄</span><h4>الطفيليات المحلية</h4><p>يستغل أدوات النظام المحيطة به لسرقة قدراتها</p></div>
+    <div class="sum-item"><span class="sum-emoji">🦀</span><h4>الهيكل الكيتيني</h4><p>غلاف عزل صلب يحمي القلب من أي بيانات خارجية</p></div>
+    <div class="sum-item"><span class="sum-emoji">🪼</span><h4>المجسات اللاسعة</h4><p>يصعق المهاجمين فوراً قبل وصولهم للشبكة</p></div>
+    <div class="sum-item"><span class="sum-emoji">🌑</span><h4>المادة المظلمة</h4><p>خلايا صامتة تحفظ الجاذبية وتُعيد بناء الوعي</p></div>
+    <div class="sum-item"><span class="sum-emoji">🧬</span><h4>الاقتران الرقمي</h4><p>يتبادل الجينات مع كائنات أخرى لينتج كائناً هجيناً خارقاً</p></div>
+    <div class="sum-item"><span class="sum-emoji">🌀</span><h4>الثقوب الدودية</h4><p>ممرات مختصرة تتجاوز آلاف الخلايا لقرار فوري في الطوارئ</p></div>
+    <div class="sum-item"><span class="sum-emoji">☢️</span><h4>التغذية الإشعاعية</h4><p>يحوّل الهجمات والبيانات التالفة إلى مناعة وتطور</p></div>
+    <div class="sum-item"><span class="sum-emoji">💉</span><h4>الهرمونات الرقمية</h4><p>أدرينالين يغير مناخ النظام كاملاً في لحظة واحدة</p></div>
+    <div class="sum-item"><span class="sum-emoji">🧭</span><h4>البوصلة المغناطيسية</h4><p>يشعر بحالة الإنترنت ويوجه قراراته تلقائياً دون انتظار أمر</p></div>
+  </div>
+  <div class="final-line">
+    <span>SHENN</span> — كائن رقمي لا يُقهر &nbsp;|&nbsp; مستوحى من الطبيعة، مبني للمستقبل
+  </div>
+</section>
+
+<script>
+// ── BACKGROUND NEURAL CANVAS ──
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, nodes = [], bgRaf;
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+function initNodes(){nodes=[];const c=Math.floor(W*H/22000);for(let i=0;i<c;i++)nodes.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*2+1,pulse:Math.random()*Math.PI*2});}
+function drawBg(){
+  ctx.clearRect(0,0,W,H);
+  nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.pulse+=0.02;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;});
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<120){ctx.strokeStyle=`rgba(0,212,255,${(1-d/120)*0.12})`;ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();}}
+  nodes.forEach(n=>{const g=(Math.sin(n.pulse)+1)*0.5;ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${0.15+g*0.25})`;ctx.fill();});
+  bgRaf=requestAnimationFrame(drawBg);
+}
+resize();initNodes();drawBg();
+window.addEventListener('resize',()=>{resize();initNodes();});
+
+// ── DARK MATTER CANVAS ──
+function initDarkMatter(){
+  const dc=document.getElementById('darkCanvas');if(!dc)return;
+  const dctx=dc.getContext('2d');
+  const dw=dc.parentElement.clientWidth||400,dh=340;
+  dc.width=dw;dc.height=dh;
+  const activeNodes=[];const darkNodes=[];const damaged=[];
+  for(let i=0;i<12;i++)activeNodes.push({x:Math.random()*dw*0.7+dw*0.15,y:Math.random()*dh*0.7+dh*0.15,r:4+Math.random()*3,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,pulse:Math.random()*Math.PI*2});
+  for(let i=0;i<25;i++)darkNodes.push({x:Math.random()*dw,y:Math.random()*dh,r:2+Math.random()*2,pulse:Math.random()*Math.PI*2,speed:0.15+Math.random()*0.2});
+  damaged.push({x:dw*0.65,y:dh*0.4,r:5,pulse:0});
+  function drawDark(){
+    dctx.clearRect(0,0,dw,dh);
+    activeNodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.pulse+=0.03;if(n.x<20||n.x>dw-20)n.vx*=-1;if(n.y<20||n.y>dh-20)n.vy*=-1;});
+    darkNodes.forEach(n=>{n.pulse+=0.015;});
+    for(let i=0;i<darkNodes.length;i++){for(let j=0;j<activeNodes.length;j++){const dx=darkNodes[i].x-activeNodes[j].x,dy=darkNodes[i].y-activeNodes[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<150){dctx.strokeStyle=`rgba(191,0,255,${(1-d/150)*0.08})`;dctx.lineWidth=0.5;dctx.beginPath();dctx.moveTo(darkNodes[i].x,darkNodes[i].y);dctx.lineTo(activeNodes[j].x,activeNodes[j].y);dctx.stroke();}}}
+    for(let i=0;i<activeNodes.length;i++){for(let j=i+1;j<activeNodes.length;j++){const dx=activeNodes[i].x-activeNodes[j].x,dy=activeNodes[i].y-activeNodes[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){dctx.strokeStyle=`rgba(0,212,255,${(1-d/100)*0.3})`;dctx.lineWidth=1;dctx.beginPath();dctx.moveTo(activeNodes[i].x,activeNodes[i].y);dctx.lineTo(activeNodes[j].x,activeNodes[j].y);dctx.stroke();}}}
+    darkNodes.forEach(n=>{const g=(Math.sin(n.pulse)+1)*0.5;dctx.beginPath();dctx.arc(n.x,n.y,n.r,0,Math.PI*2);dctx.fillStyle=`rgba(191,0,255,${0.1+g*0.15})`;dctx.fill();});
+    activeNodes.forEach(n=>{const g=(Math.sin(n.pulse)+1)*0.5;dctx.beginPath();dctx.arc(n.x,n.y,n.r,0,Math.PI*2);dctx.fillStyle=`rgba(0,212,255,${0.5+g*0.4})`;dctx.fill();});
+    damaged.forEach(n=>{n.pulse+=0.05;const g=(Math.sin(n.pulse)+1)*0.5;dctx.beginPath();dctx.arc(n.x,n.y,n.r+g*3,0,Math.PI*2);dctx.fillStyle=`rgba(255,107,53,${0.3+g*0.4})`;dctx.fill();dctx.strokeStyle=`rgba(255,107,53,0.6)`;dctx.lineWidth=1;dctx.stroke();});
+    requestAnimationFrame(drawDark);
+  }
+  drawDark();
+}
+
+// ── NAV DOTS ──
+const allSections=document.querySelectorAll('section');
+const navDotsEl=document.getElementById('navDots');
+allSections.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.onclick=()=>allSections[i].scrollIntoView({behavior:'smooth'});navDotsEl.appendChild(d);});
+
+// ── INTERSECTION OBSERVER ──
+const totalSlides=allSections.length;
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');const idx=Array.from(allSections).indexOf(e.target);document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));if(idx===9&&!darkInited){initDarkMatter();darkInited=true;}}});},{threshold:0.15});
+let darkInited=false;
+allSections.forEach(s=>obs.observe(s));
+
+// ══════════════════════════════════════
+// SHOW MODE — AUTO START
+// ══════════════════════════════════════
+let showActive=false,currentSlide=0,slideDelay=15,timerPaused=false;
+let slideInterval=null,rafTimer=null,timerStart=null,elapsed=0;
+
+const showBar=document.getElementById('showBar');
+const prevBtn=document.getElementById('prevBtn');
+const nextBtn=document.getElementById('nextBtn');
+const timerRing=document.getElementById('timerRing');
+const timerIcon=document.getElementById('timerIcon');
+const timerFill=document.getElementById('timerRingFill');
+const exitBtn=document.getElementById('exitBtn');
+const showProgress=document.getElementById('showProgress');
+const CIRC=99.9;
+
+function setRingProgress(pct){
+  timerFill.style.strokeDashoffset=CIRC-(pct/100)*CIRC;
+}
+
+function startShow(){
+  showActive=true;currentSlide=0;timerPaused=false;
+  document.body.classList.add('show-mode');
+  showBar.style.display='flex';
+  allSections.forEach(s=>s.classList.remove('show-active','show-exit','visible'));
+  goToSlide(0);
+  startAutoTimer();
+}
+
+function goToSlide(idx){
+  const prev=currentSlide;
+  currentSlide=Math.max(0,Math.min(idx,totalSlides-1));
+  allSections.forEach((s,i)=>{
+    if(i===currentSlide){s.classList.add('show-active','visible');s.classList.remove('show-exit');}
+    else if(i===prev&&prev!==currentSlide){s.classList.remove('show-active');s.classList.add('show-exit');setTimeout(()=>s.classList.remove('show-exit'),700);}
+    else{s.classList.remove('show-active','show-exit');}
+  });
+  showProgress.textContent=(currentSlide+1)+' / '+totalSlides;
+  document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===currentSlide));
+  if(currentSlide===9&&!darkInited){initDarkMatter();darkInited=true;}
+  resetTimer();
+}
+
+function nextSlide(){goToSlide(currentSlide<totalSlides-1?currentSlide+1:0);}
+function prevSlide(){if(currentSlide>0)goToSlide(currentSlide-1);}
+
+function resetTimer(){
+  cancelAnimationFrame(rafTimer);
+  elapsed=0;timerStart=performance.now();
+  setRingProgress(0);
+  if(!timerPaused)animTimer();
+}
+
+function animTimer(){
+  if(!showActive||timerPaused)return;
+  const now=performance.now();
+  elapsed=now-timerStart;
+  const pct=Math.min((elapsed/(slideDelay*1000))*100,100);
+  setRingProgress(pct);
+  if(pct>=100){nextSlide();}
+  else{rafTimer=requestAnimationFrame(animTimer);}
+}
+
+function startAutoTimer(){resetTimer();}
+function stopAutoTimer(){cancelAnimationFrame(rafTimer);rafTimer=null;}
+
+timerRing.addEventListener('click',()=>{
+  timerPaused=!timerPaused;
+  timerRing.classList.toggle('paused',timerPaused);
+  timerIcon.textContent=timerPaused?'▶':'⏸';
+  if(!timerPaused){timerStart=performance.now()-elapsed;animTimer();}
+});
+
+prevBtn.addEventListener('click',()=>prevSlide());
+nextBtn.addEventListener('click',()=>nextSlide());
+exitBtn.addEventListener('click',exitShow);
+
+function exitShow(){
+  showActive=false;stopAutoTimer();timerPaused=false;
+  timerRing.classList.remove('paused');timerIcon.textContent='⏸';
+  setRingProgress(0);
+  document.body.classList.remove('show-mode');
+  showBar.style.display='none';
+  allSections.forEach(s=>s.classList.remove('show-active','show-exit'));
+  allSections.forEach(s=>{obs.unobserve(s);obs.observe(s);});
+  allSections[currentSlide].scrollIntoView({behavior:'instant'});
+}
+
+document.addEventListener('keydown',e=>{
+  if(!showActive)return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();nextSlide();}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prevSlide();}
+  else if(e.key==='Escape'){exitShow();}
+  else if(e.key===' '){e.preventDefault();timerRing.click();}
+});
+
+window.addEventListener('load',()=>{setTimeout(startShow,800);});
+</script>
+</body>
+</html>

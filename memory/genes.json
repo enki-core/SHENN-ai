@@ -1,0 +1,10 @@
+{
+  "avg_weights": [
+    1.4073,
+    1.6049
+  ],
+  "avg_bias": -1.5245,
+  "max_generation": 4,
+  "rounds_lived": 84,
+  "neuron_count": 13
+}

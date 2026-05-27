@@ -1,0 +1,167 @@
+/* =============================================================
+   SHENN GUI — style.qss
+   ============================================================= */
+
+/* --- النافذة الكاملة --- */
+QMainWindow, QWidget {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    font-family: "Segoe UI", "Arial", sans-serif;
+    font-size: 13px;
+}
+
+/* --- التبويبات --- */
+QTabWidget::pane {
+    border: 1px solid #313244;
+    border-radius: 8px;
+    background: #1e1e2e;
+}
+QTabBar::tab {
+    background: #181825;
+    color: #a6adc8;
+    padding: 8px 20px;
+    margin-right: 2px;
+    border-radius: 6px 6px 0 0;
+    font-size: 13px;
+}
+QTabBar::tab:selected {
+    background: #313244;
+    color: #cba6f7;
+    font-weight: bold;
+}
+QTabBar::tab:hover {
+    background: #262637;
+    color: #cdd6f4;
+}
+
+/* --- الأزرار --- */
+QPushButton {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+}
+QPushButton:hover {
+    background-color: #45475a;
+    border-color: #cba6f7;
+    color: #cba6f7;
+}
+QPushButton:pressed {
+    background-color: #585b70;
+}
+QPushButton:disabled {
+    background-color: #181825;
+    color: #585b70;
+    border-color: #313244;
+}
+
+/* --- الحقول --- */
+QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 4px 8px;
+    selection-background-color: #cba6f7;
+    selection-color: #1e1e2e;
+}
+QLineEdit:focus, QTextEdit:focus,
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #cba6f7;
+}
+
+/* --- الجداول --- */
+QTableWidget {
+    background-color: #181825;
+    color: #cdd6f4;
+    border: 1px solid #313244;
+    border-radius: 6px;
+    gridline-color: #313244;
+    alternate-background-color: #1e1e2e;
+}
+QTableWidget::item:selected {
+    background-color: #45475a;
+    color: #cba6f7;
+}
+QHeaderView::section {
+    background-color: #313244;
+    color: #a6adc8;
+    border: none;
+    padding: 6px;
+    font-weight: bold;
+}
+
+/* --- المجموعات --- */
+QGroupBox {
+    border: 1px solid #313244;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 8px;
+    font-weight: bold;
+    color: #cba6f7;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top right;
+    padding: 0 8px;
+    color: #cba6f7;
+}
+
+/* --- شريط التقدم --- */
+QProgressBar {
+    background-color: #181825;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    text-align: center;
+    color: #cdd6f4;
+    height: 20px;
+}
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #cba6f7, stop:1 #89b4fa);
+    border-radius: 5px;
+}
+
+/* --- الإطارات (البطاقات) --- */
+QFrame[frameShape="5"] {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+/* --- القوائم المنسدلة --- */
+QScrollBar:vertical {
+    background: #181825;
+    width: 8px;
+    border-radius: 4px;
+}
+QScrollBar::handle:vertical {
+    background: #45475a;
+    border-radius: 4px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #cba6f7;
+}
+QScrollBar:horizontal {
+    background: #181825;
+    height: 8px;
+    border-radius: 4px;
+}
+QScrollBar::handle:horizontal {
+    background: #45475a;
+    border-radius: 4px;
+}
+
+/* --- الرسائل --- */
+QMessageBox {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* --- Splitter --- */
+QSplitter::handle {
+    background: #313244;
+}
